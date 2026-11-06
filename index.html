@@ -169,6 +169,12 @@ const defaults={coins:0,skins:['emerald','coral'],foods:['apple'],skin1:'emerald
 let save=Object.assign({},defaults);
 try{const raw=localStorage.getItem(SAVE_KEY);if(raw)save=Object.assign({},defaults,JSON.parse(raw))}catch(e){}
 function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
+// One-time progress reset for everyone: raise EPOCH to wipe coins, unlocks and records again.
+const EPOCH=2;
+if(save.epoch!==EPOCH){
+  const keep={hardcore:save.hardcore,sound:save.sound,vsTime:save.vsTime,speed:save.speed,soloTime:save.soloTime,aiLevel:save.aiLevel};
+  save=Object.assign({},defaults,keep,{epoch:EPOCH});persist();
+}
 
 /* ---------- colour helpers ---------- */
 const _rc={};
