@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Serpentine</title>
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
@@ -13,7 +13,7 @@
   --ui:"Avenir Next","Segoe UI","Helvetica Neue",Arial,sans-serif;
 }
 *{box-sizing:border-box}
-html,body{margin:0;height:100%;background:var(--bg);overflow:hidden;font-family:var(--ui);color:var(--text);-webkit-user-select:none;user-select:none}
+html,body{margin:0;height:100%;touch-action:none;overscroll-behavior:none;background:var(--bg);overflow:hidden;font-family:var(--ui);color:var(--text);-webkit-user-select:none;user-select:none}
 #stage{position:absolute;width:960px;height:600px;transform-origin:0 0;background:#0a0e0b}
 #cv{position:absolute;inset:0;width:960px;height:600px;background:#0a0e0b;display:block}
 #hud{position:absolute;left:0;top:0;width:960px;height:52px;display:none;align-items:center;padding:0 30px;gap:26px;pointer-events:none}
@@ -110,6 +110,10 @@ kbd{font:600 10px var(--ui);border:1px solid rgba(255,255,255,.22);border-bottom
 .omsg.err{color:#ff8a7a}
 .or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:10px;letter-spacing:.25em;margin:14px 0}
 .or:before,.or:after{content:"";flex:1;height:1px;background:rgba(255,255,255,.1)}
+#boostbtn{display:none;position:absolute;right:34px;bottom:30px;width:96px;height:96px;border-radius:50%;border:2px solid rgba(255,170,90,.8);background:rgba(255,120,40,.22);color:#ffd2a8;font:800 13px var(--ui);letter-spacing:.14em;z-index:6;touch-action:none;-webkit-tap-highlight-color:transparent}
+#boostbtn.on{display:block}
+#boostbtn.down{background:rgba(255,120,40,.6);color:#fff}
+@media (pointer:fine){#boostbtn.on{display:none}}
 </style>
 </head>
 <body>
@@ -117,6 +121,7 @@ kbd{font:600 10px var(--ui);border:1px solid rgba(255,255,255,.22);border-bottom
   <canvas id="cv" width="960" height="600"></canvas>
   <div id="hud"></div>
   <div id="ov"></div>
+  <button id="boostbtn" type="button">BOOST</button>
 </div>
 
 <script>
@@ -225,10 +230,18 @@ const sfx={
    ========================================================================= */
 const cv=$('#cv'),ctx=cv.getContext('2d');
 const stage=$('#stage');
-let ratio=1,bg=null,vig=null;
+let ratio=1,bg=null,vig=null,portrait=false;
 function resize(){
-  const s=Math.min(innerWidth/W,innerHeight/H);
-  stage.style.transform=`scale(${s})`;stage.style.left=((innerWidth-W*s)/2)+'px';stage.style.top=((innerHeight-H*s)/2)+'px';
+  portrait=innerHeight>innerWidth*1.1;
+  let s;
+  if(portrait){
+    s=Math.min(innerHeight/W,innerWidth/H);
+    stage.style.left='0px';stage.style.top='0px';
+    stage.style.transform=`translate(${(innerWidth+H*s)/2}px,${(innerHeight-W*s)/2}px) rotate(90deg) scale(${s})`;
+  }else{
+    s=Math.min(innerWidth/W,innerHeight/H);
+    stage.style.transform=`scale(${s})`;stage.style.left=((innerWidth-W*s)/2)+'px';stage.style.top=((innerHeight-H*s)/2)+'px';
+  }
   const r=Math.min(3,Math.max(1,s*(window.devicePixelRatio||1)));
   if(!bg||Math.abs(r-ratio)>.01){ratio=r;cv.width=Math.round(W*ratio);cv.height=Math.round(H*ratio);buildBackground()}
 }
@@ -932,6 +945,7 @@ function buildHUD(){
 }
 function setT(id,v){const e=HR[id];if(e&&e.textContent!==String(v))e.textContent=v}
 function updateHUD(){
+  bb.classList.toggle('on',!!(G&&G.mode!=='attract'&&!screenName&&!G.over));
   if(!G||G.mode==='attract')return;
   if(G.mode==='solo'){
     const s=G.snakes[0];
@@ -1164,7 +1178,7 @@ addEventListener('blur',()=>{keys.clear();boostSound(false);if(G&&G.mode!=='attr
 // swipe controls
 let tx=0,ty=0;
 addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY},{passive:true});
-addEventListener('touchend',e=>{if(!G||G.mode==='attract'||screenName)return;const t=e.changedTouches[0],dx=t.clientX-tx,dy=t.clientY-ty;
+addEventListener('touchend',e=>{if(!G||G.mode==='attract'||screenName)return;if(e.target.closest&&e.target.closest('#boostbtn,.cashbtn'))return;const t=e.changedTouches[0];let dx=t.clientX-tx,dy=t.clientY-ty;if(portrait){const a=dx;dx=dy;dy=-a}
   if(Math.max(Math.abs(dx),Math.abs(dy))<24)return;const d=Math.abs(dx)>Math.abs(dy)?{x:Math.sign(dx),y:0}:{x:0,y:Math.sign(dy)};enqueue(G.snakes[0],d)},{passive:true});
 
 /* =========================================================================
@@ -1319,7 +1333,12 @@ function frame(now){
   for(const p of previews)renderPreview(p,clock);
   requestAnimationFrame(frame);
 }
+const bb=$('#boostbtn');
+function bbSet(on){if(on)keys.add('Space');else keys.delete('Space');bb.classList.toggle('down',on);updateBoostSound();syncBoost()}
+bb.addEventListener('pointerdown',e=>{e.preventDefault();audio();bbSet(true)});
+['pointerup','pointercancel','pointerleave'].forEach(n=>bb.addEventListener(n,()=>bbSet(false)));
 addEventListener('resize',resize);
+addEventListener('orientationchange',()=>setTimeout(resize,200));
 resize();
 showMenu();
 requestAnimationFrame(frame);
