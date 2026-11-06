@@ -1093,20 +1093,6 @@ function showShop(){setScreen('shop',shopHTML())}
 function refreshShop(){const g=ov.querySelector('.grid');const st=g?g.scrollTop:0;showShop();const g2=ov.querySelector('.grid');if(g2)g2.scrollTop=st}
 
 ov.addEventListener('click',e=>{
-  const card=e.target.closest('.card');
-  if(card&&screenName==='shop'){
-    const pv=card.querySelector('canvas[data-pv="food"]');
-    if(pv&&pv.dataset.id==='fish'){
-      ui.trout=(ui.trout||0)+1;
-      if(ui.trout>=10){
-        ui.trout=0;save.coins+=1000;save.earned+=1000;persist();audio();sfx.cash();refreshShop();
-        const t=document.createElement('div');t.textContent='+1000 COINS';
-        t.style.cssText='position:absolute;left:50%;top:78px;transform:translateX(-50%);background:#f2c14e;color:#1a1204;font:800 15px var(--ui);letter-spacing:.16em;padding:10px 20px;border-radius:8px;z-index:5;box-shadow:0 10px 30px rgba(0,0,0,.5)';
-        ov.appendChild(t);setTimeout(()=>t.remove(),1800);
-        return;
-      }
-    }else ui.trout=0;
-  }
   const b=e.target.closest('[data-act]');if(!b||b.disabled)return;b.blur();const d=b.dataset;
   audio();sfx.click();
   switch(d.act){
@@ -1333,6 +1319,16 @@ function frame(now){
   for(const p of previews)renderPreview(p,clock);
   requestAnimationFrame(frame);
 }
+// secret: tap the playfield squares 10 times during a run for 1000 coins
+cv.addEventListener('click',()=>{
+  if(!G||G.mode==='attract'||screenName||G.over||G.paused)return;
+  G.taps=(G.taps||0)+1;
+  if(G.taps>=10){
+    G.taps=0;save.coins+=1000;save.earned+=1000;persist();audio();sfx.cash();
+    floatText(W/2,H/2,'+1000 COINS','#f2c14e',38);G.shake=Math.max(G.shake,5);
+    const p=cellPx({x:COLS/2|0,y:ROWS/2|0});burst(p.x,p.y,40,{min:80,max:330,s0:2,s1:4.5,colors:['#f2c14e','#ffe27a','#fff1a8'],type:'spark',g:300,drag:1.5,life:1.2});
+  }
+});
 const bb=$('#boostbtn');
 function bbSet(on){if(on)keys.add('Space');else keys.delete('Space');bb.classList.toggle('down',on);updateBoostSound();syncBoost()}
 bb.addEventListener('pointerdown',e=>{e.preventDefault();audio();bbSet(true)});
