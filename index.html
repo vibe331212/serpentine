@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Serpentine</title>
+<title>Slither</title>
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="Slither">
+<meta name="theme-color" content="#0E1F1A">
 <script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
 <style>
 :root{
@@ -127,7 +132,7 @@ kbd{font:600 10px var(--ui);border:1px solid rgba(255,255,255,.22);border-bottom
 <script>
 'use strict';
 /* =========================================================================
-   SERPENTINE
+   SLITHER
    ========================================================================= */
 const W=960,H=600,COLS=30,ROWS=17,CELL=30,OX=30,OY=68;
 const MIN_LEN=4;
@@ -550,7 +555,7 @@ function startGame(mode,cfg){
   else if(mode==='cpu'){G.snakes.push(makeSnake(0,6,5,1,0,save.skin1,{label:'P1'}),makeSnake(1,23,11,-1,0,pickOther(save.skin1),{label:'CPU',ai:true,level:save.aiLevel}))}
   else if(mode==='online'){const gs=cfg.gs;G.snakes.push(makeSnake(0,6,5,1,0,save.skin1,{label:'YOU'}),makeSnake(1,23,11,-1,0,gs,{label:'FRIEND',remote:true}));G.skins=[save.skin1,gs]}
   else if(mode==='guest'){G.snakes.push(makeSnake(0,6,5,1,0,cfg.skins[0],{label:'FRIEND'}),makeSnake(1,23,11,-1,0,cfg.skins[1],{label:'YOU'}))}
-  else if(mode==='attract'){G.snakes.push(makeSnake(0,12,8,1,0,pick(SKINS).id,{label:'',ai:true,level:'medium'}))}
+  else if(mode==='attract'){/* no bot: menu background is static */}
   if(mode!=='guest'){const n=mode==='versus'||mode==='cpu'||mode==='online'?5:3;for(let i=0;i<n;i++)spawnFood()}
   buildHUD();
   if(mode==='online')netSend({t:'start',cfg:{limit:G.limit,step:G.step,skins:G.skins}});
@@ -990,7 +995,7 @@ function renderPreview(p,t){
 function menuHTML(){
   const sk=SKIN_BY[save.skin1],fd=FOOD_BY[save.food];
   return`<div class="menu">
-  <div class="brand"><div class="eyebrow">ARCADE SNAKE</div><h1>SERPENTINE</h1>
+  <div class="brand"><div class="eyebrow">ARCADE SNAKE</div><h1>SLITHER</h1>
   <p class="tag2">Pick your prey, grow your snake and cash out before the walls take it all. Boosting burns your own tail.</p></div>
   <div class="mb">
     <button class="btn pri" data-act="play" data-mode="solo">Solo Run<small>${save.soloTime?save.soloTime+' second run':'Endless run'} at ${SPEEDS[save.speed].n} speed. Crash and keep half.</small></button>
@@ -1107,6 +1112,7 @@ ov.addEventListener('click',e=>{
     case'host':hostRoom();break;
     case'join':joinRoom($('#codeIn')?$('#codeIn').value:'');break;
     case'rematch':if(NET&&NET.conn&&NET.conn.open)startOnlineHost();else showMsg('FRIEND LEFT','The other player disconnected.');break;
+    case'online-cancel':netClose();ol.mode='choose';ol.msg='';ol.err=false;ol.code='';ol.typed='';ui.confirmReset=false;if(G&&G.mode!=='attract')hud.className='';showMenu();break;
     case'menu':netClose();ui.confirmReset=false;if(G&&G.mode!=='attract')hud.className='';showMenu();break;
     case'shop':showShop();break;
     case'settings':setScreen('settings',settingsHTML());break;
